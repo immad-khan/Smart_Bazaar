@@ -55,3 +55,4 @@ appsettings.Production.json
 # Build outputs
 wwwroot/
 package-lock.json
+.env
