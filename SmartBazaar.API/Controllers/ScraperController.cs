@@ -24,7 +24,7 @@ public async Task<IActionResult> GetSearch(string q)
     if (string.IsNullOrWhiteSpace(q)) return BadRequest();
     
     // This now calls BOTH stores in parallel!
-    var results = await _scraper.SearchAllStores(q);
+    var results = await _scraper.SearchAll(q);
     
     return Ok(results);
 }

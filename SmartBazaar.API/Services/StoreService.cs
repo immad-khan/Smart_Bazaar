@@ -51,5 +51,11 @@ public async Task<Models.Store?> GetBySellerIdAsync(int sellerId)
 				new { StoreName = storeName, SellerID = sellerId });
 			return count > 0;
 		}
+
+		public async Task<IEnumerable<Models.Store>> GetAllStoresAsync()
+		{
+			using var connection = _context.CreateConnection();
+			return await connection.QueryAsync<Models.Store>("SELECT * FROM stores ORDER BY storename");
+		}
 	}
 }

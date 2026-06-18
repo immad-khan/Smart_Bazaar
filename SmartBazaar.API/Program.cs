@@ -1,8 +1,15 @@
 using SmartBazaar.API.Services;
 using SmartBazaar.API.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 // Register the Database Context
 builder.Services.AddSingleton<DatabaseContext>();
+
+// Register HttpClient for API calls
+builder.Services.AddHttpClient();
 
 // Register the Services your partner wrote
 builder.Services.AddScoped<ProductService>();
@@ -10,6 +17,32 @@ builder.Services.AddScoped<SellerService>();
 builder.Services.AddScoped<StoreService>();
 // Add services to the container.
 builder.Services.AddScoped<ScraperService>();
+builder.Services.AddSingleton<SemanticSearchService>();
+builder.Services.AddSingleton<VectorSearchService>();
+
+// Register Authentication Services
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+
+// Configure JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers();
 
 // Configure CORS
@@ -41,6 +74,19 @@ builder.Services.AddSingleton(provider =>
     }));
 var app = builder.Build();
 
+// Initialize Qdrant collection on startup
+try
+{
+    var semanticSearch = app.Services.GetRequiredService<SemanticSearchService>();
+    await semanticSearch.InitializeCollectionAsync();
+    Console.WriteLine("✅ Qdrant collection initialized");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Qdrant collection initialization failed: {ex.Message}");
+    Console.WriteLine("ℹ️ API will continue without semantic search");
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -50,8 +96,9 @@ if (app.Environment.IsDevelopment())
 // Use CORS
 app.UseCors("AllowAll");
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

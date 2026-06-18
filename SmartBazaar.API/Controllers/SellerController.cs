@@ -17,7 +17,7 @@ namespace SmartBazaar.API.Controllers
 		}
 
 		[HttpPost("register")]
-		public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+		public async Task<IActionResult> Register([FromBody] OldRegisterRequest request)
 		{
 			try
 			{
@@ -58,5 +58,14 @@ namespace SmartBazaar.API.Controllers
 				return Unauthorized(ex.Message);
 			}
 		}
+	}
+
+	public class OldRegisterRequest
+	{
+		public string FirstName { get; set; } = string.Empty;
+		public string LastName { get; set; } = string.Empty;
+		public string Email { get; set; } = string.Empty;
+		public string Password { get; set; } = string.Empty;
+		public string PhoneNumber { get; set; } = string.Empty;
 	}
 }

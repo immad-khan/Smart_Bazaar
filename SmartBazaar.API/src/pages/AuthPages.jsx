@@ -146,9 +146,10 @@ export const SignupPage = ({ setCurrentPage, setUser }) => {
     }
 
     try {
+      const nameParts = name.trim().split(/\s+/);
       const payload = {
-        FirstName: name.split(' ')[0],
-        LastName: name.split(' ')[1] || '',
+        FirstName: nameParts[0],
+        LastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0],
         Email: email,
         Password: password,
         PhoneNumber: phone

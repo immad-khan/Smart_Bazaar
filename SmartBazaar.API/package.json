@@ -9,11 +9,14 @@
   },
   "dependencies": {
     "@splinetool/react-spline": "^4.1.0",
+    "@tensorflow-models/mobilenet": "^2.1.1",
+    "@tensorflow/tfjs": "^4.22.0",
     "cloudinary-core": "^2.14.0",
     "cloudinary-react": "^1.8.1",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",

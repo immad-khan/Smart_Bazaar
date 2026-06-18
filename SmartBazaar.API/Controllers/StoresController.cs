@@ -58,5 +58,19 @@ namespace SmartBazaar.API.Controllers
 				return BadRequest(ex.Message);
 			}
 		}
+
+		[HttpGet("all")]
+		public async Task<IActionResult> GetAllStores()
+		{
+			try
+			{
+				var stores = await _storeService.GetAllStoresAsync();
+				return Ok(stores);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
 	}
 }

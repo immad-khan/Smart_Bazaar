@@ -14,7 +14,7 @@ namespace SmartBazaar.API.Services
 			_context = context;
 		}
 
-		public async Task<Models.Seller> GetByEmailAsync(string email)
+		public async Task<Models.Seller?> GetByEmailAsync(string email)
 		{
 			using var connection = _context.CreateConnection();
 			return await connection.QueryFirstOrDefaultAsync<Models.Seller>(

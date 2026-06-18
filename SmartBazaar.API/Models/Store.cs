@@ -11,17 +11,17 @@ namespace SmartBazaar.API.Models
 
 		[Required]
 		[StringLength(100)]
-		public string StoreName { get; set; }
+		public string StoreName { get; set; } = string.Empty;
 
 		[Required]
 		[StringLength(255)]
-		public string Address { get; set; }
+		public string Address { get; set; } = string.Empty;
 
 		[Required]
 		[StringLength(20)]
-		public string ContactNumber { get; set; }
+		public string ContactNumber { get; set; } = string.Empty;
 
-		public string Description { get; set; }
+		public string? Description { get; set; }
 	public double? Latitude { get; set; }
 	public double? Longitude { get; set; }
 	public string? GoogleMapsUrl { get; set; }

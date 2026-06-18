@@ -34,20 +34,20 @@ namespace SmartBazaar.API.Controllers
 				}
 
 				// Search in parallel from both sources
-				var scrapedTask = _scraperService.SearchAllStores(q);
-				var databaseTask = SearchDatabaseProducts(q);
+			var scrapedTask = _scraperService.SearchAll(q);
+			var databaseTask = SearchDatabaseProducts(q);
 
-				await Task.WhenAll(scrapedTask, databaseTask);
+			await Task.WhenAll(scrapedTask, databaseTask);
 
-				var result = new
-				{
-					query = q,
-					scraped = scrapedTask.Result,
-					database = databaseTask.Result,
-					totalResults = scrapedTask.Result.Count + databaseTask.Result.Count
-				};
+			var result = new
+			{
+				query = q,
+				scraped = scrapedTask.Result,
+				database = databaseTask.Result,
+				totalResults = scrapedTask.Result.Count + databaseTask.Result.Count
+			};
 
-				return Ok(result);
+			return Ok(result);
 			}
 			catch (Exception ex)
 			{

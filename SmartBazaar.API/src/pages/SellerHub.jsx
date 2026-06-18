@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Navigation } from './SellerComponents';
-import { LoginPage, SignupPage } from './AuthPages';
+import { Navigation, ApiService } from './SellerComponents';
+import NewAuthFlow from './NewAuthFlow';
 import { StoreRegistrationPage } from './StorePages';
 import { AddProductPage, EditProductPage, ProductsPage } from './ProductPages';
 
@@ -45,18 +45,57 @@ const SessionTimeout = ({ setCurrentPage, setUser }) => {
 
 // Main SellerHub Component
 export default function SellerHub({ navigateToLanding }) {
-  const [currentPage, setCurrentPage] = useState('login');
+  const [currentPage, setCurrentPage] = useState('auth');
   const [user, setUser] = useState(null);
+  const [store, setStore] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [loadingStore, setLoadingStore] = useState(false);
 
   // Check for stored user on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setCurrentPage('products');
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      // We will check for store in the user effect
     }
   }, []);
+
+  // Effect to fetch store when user is set
+  useEffect(() => {
+    const fetchStore = async () => {
+      if (user) {
+        setLoadingStore(true);
+        try {
+          const sellerId = user.id || user.Id || user.sellerID;
+          console.log('Fetching store for seller:', sellerId);
+          const storeData = await ApiService.getStoreBySellerId(sellerId);
+          console.log('Fetched store data:', storeData);
+          if (storeData && (storeData.storeID || storeData.StoreID)) {
+            setStore(storeData);
+            if (currentPage === 'auth') {
+              setCurrentPage('products');
+            }
+          } else {
+            setCurrentPage('store');
+          }
+        } catch (error) {
+          console.error("Failed to fetch store:", error);
+          setCurrentPage('store');
+        } finally {
+          setLoadingStore(false);
+        }
+      }
+    };
+    fetchStore();
+  }, [user]);
+
+  // Handle successful authentication from NewAuthFlow
+  const handleAuthSuccess = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    // Page will be set in fetchStore effect
+  };
 
   // Helper to set page with optional product data
   const handleSetCurrentPage = (page, productData) => {
@@ -67,21 +106,27 @@ export default function SellerHub({ navigateToLanding }) {
   };
 
   const renderPage = () => {
+    if (loadingStore) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+      );
+    }
+
     switch(currentPage) {
-      case 'login':
-        return <LoginPage setCurrentPage={handleSetCurrentPage} setUser={setUser} />;
-      case 'signup':
-        return <SignupPage setCurrentPage={handleSetCurrentPage} setUser={setUser} />;
+      case 'auth':
+        return <NewAuthFlow onAuthSuccess={handleAuthSuccess} />;
       case 'store':
-        return <StoreRegistrationPage setCurrentPage={handleSetCurrentPage} user={user} />;
+        return <StoreRegistrationPage setCurrentPage={handleSetCurrentPage} user={user} setStore={setStore} />;
       case 'addProduct':
-        return <AddProductPage setCurrentPage={handleSetCurrentPage} user={user} />;
+        return <AddProductPage setCurrentPage={handleSetCurrentPage} user={user} store={store} />;
       case 'editProduct':
-        return <EditProductPage setCurrentPage={handleSetCurrentPage} user={user} product={editingProduct} />;
+        return <EditProductPage setCurrentPage={handleSetCurrentPage} user={user} product={editingProduct} store={store} />;
       case 'products':
-        return <ProductsPage setCurrentPage={handleSetCurrentPage} user={user} />;
+        return <ProductsPage setCurrentPage={handleSetCurrentPage} user={user} store={store} />;
       default:
-        return <LoginPage setCurrentPage={handleSetCurrentPage} setUser={setUser} />;
+        return <NewAuthFlow onAuthSuccess={handleAuthSuccess} />;
     }
   };
 

@@ -5,29 +5,29 @@ namespace SmartBazaar.API.Models
 	public class LoginRequest
 	{
 		[Required]
-		public string Email { get; set; }
+		public string Email { get; set; } = string.Empty;
 
 		[Required]
-		public string Password { get; set; }
+		public string Password { get; set; } = string.Empty;
 	}
 
 	public class RegisterRequest
 	{
 		[Required]
-		public string FirstName { get; set; }
+		public string FirstName { get; set; } = string.Empty;
 
 		[Required]
-		public string LastName { get; set; }
+		public string LastName { get; set; } = string.Empty;
 
 		[Required]
 		[EmailAddress]
-		public string Email { get; set; }
+		public string Email { get; set; } = string.Empty;
 
 		[Required]
-		public string Password { get; set; }
+		public string Password { get; set; } = string.Empty;
 
 		[Phone]
-		public string PhoneNumber { get; set; }
+		public string? PhoneNumber { get; set; }
 	}
 
 	public class AddStoreRequest
@@ -37,17 +37,17 @@ namespace SmartBazaar.API.Models
 
 		[Required]
 		[StringLength(100)]
-		public string StoreName { get; set; }
+		public string StoreName { get; set; } = string.Empty;
 
 		[Required]
 		[StringLength(255)]
-		public string Address { get; set; }
+		public string Address { get; set; } = string.Empty;
 
 		[Required]
 		[StringLength(20)]
-		public string ContactNumber { get; set; }
+		public string ContactNumber { get; set; } = string.Empty;
 
-		public string Description { get; set; }
+		public string? Description { get; set; }
 	}
 
 	public class AddProductRequest
@@ -57,9 +57,9 @@ namespace SmartBazaar.API.Models
 
 		[Required]
 		[StringLength(100)]
-		public string ProductName { get; set; }
+		public string ProductName { get; set; } = string.Empty;
 
-		public string Description { get; set; }
+		public string? Description { get; set; }
 
 		[Required]
 		[Range(0.01, 1000000)]
@@ -71,8 +71,8 @@ namespace SmartBazaar.API.Models
 
 		[Required]
 		[StringLength(50)]
-		public string Category { get; set; }
+		public string Category { get; set; } = string.Empty;
 
-		public string ImageUrl { get; set; }
+		public string? ImageUrl { get; set; }
 	}
 }

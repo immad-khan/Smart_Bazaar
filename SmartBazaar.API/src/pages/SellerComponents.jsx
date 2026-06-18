@@ -24,12 +24,34 @@ const ApiService = {
   },
 
   async loginSeller(credentials) {
-    const response = await fetch(`${this.API_BASE_URL}/api/sellers/login`, {
+    // Use new auth endpoint
+    const response = await fetch(`${this.API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
+      body: JSON.stringify({
+        email: credentials.email,
+        password: credentials.password
+      })
     });
-    return response.json();
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
+    }
+    
+    const data = await response.json();
+    
+    // Store token and user data
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('seller', JSON.stringify(data.user));
+    }
+    
+    return {
+      sellerId: data.user.id,
+      message: data.message,
+      user: data.user
+    };
   },
 
   async createStore(storeData) {
@@ -38,7 +60,13 @@ const ApiService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(storeData)
     });
-    return response.json();
+    
+    const text = await response.text();
+    try {
+      return text ? JSON.parse(text) : {};
+    } catch {
+      return text;
+    }
   },
 
   async getStoreBySellerId(sellerId) {

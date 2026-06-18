@@ -1,6 +1,6 @@
 // Cloudinary configuration and upload utility (Backend Upload)
 
-const API_BASE_URL = 'http://localhost:5009';
+const API_BASE_URL = '';
 
 /**
  * Upload image to Cloudinary via backend

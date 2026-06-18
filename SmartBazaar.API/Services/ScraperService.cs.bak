@@ -1,0 +1,389 @@
+using HtmlAgilityPack;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
+using SmartBazaar.API.Models;
+
+namespace SmartBazaar.API.Services;
+
+public class ScraperService
+{
+    private readonly HttpClient _httpClient;
+    private readonly List<string> _userAgents = new()
+    {
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    };
+
+    public ScraperService()
+    {
+        _httpClient = new HttpClient();
+        _httpClient.Timeout = TimeSpan.FromSeconds(10);
+    }
+
+    // 1. Search Logic for Naheed (Fast HttpClient)
+    public async Task<List<ScrapedProduct>> SearchNaheed(string keyword)
+    {
+        try
+        {
+            string searchUrl = $"https://www.naheed.pk/catalogsearch/result/?q={Uri.EscapeDataString(keyword)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", GetRandomUserAgent());
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<ScrapedProduct>();
+
+            var html = await response.Content.ReadAsStringAsync();
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var nodes = doc.DocumentNode.SelectNodes("//li[contains(@class, 'product-item')]");
+            var results = new List<ScrapedProduct>();
+
+            if (nodes != null)
+            {
+                foreach (var node in nodes)
+                {
+                    var name = node.SelectSingleNode(".//a[@class='product-item-link']")?.InnerText.Trim();
+                    var price = node.SelectSingleNode(".//span[@data-price-type='finalPrice']//span[@class='price']")?.InnerText.Trim();
+                    var link = node.SelectSingleNode(".//a[@class='product-item-link']")?.GetAttributeValue("href", "");
+                    var image = node.SelectSingleNode(".//img[@class='product-image-photo']")?.GetAttributeValue("src", "");
+
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(price))
+                    {
+                        results.Add(new ScrapedProduct {
+                            Name = System.Net.WebUtility.HtmlDecode(name),
+                            Price = price,
+                            Source = "Naheed",
+                            Link = link ?? "",
+                            Image = image ?? ""
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+        catch { return new List<ScrapedProduct>(); }
+    }
+
+    // 2. Search Logic for BBabyBySuleman (Fast HttpClient - Baby Products)
+    public async Task<List<ScrapedProduct>> SearchBBabyBySuleman(string keyword)
+    {
+        try
+        {
+            string searchUrl = $"https://bbabybysuleman.com/search?q={Uri.EscapeDataString(keyword)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", GetRandomUserAgent());
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<ScrapedProduct>();
+
+            var html = await response.Content.ReadAsStringAsync();
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var nodes = doc.DocumentNode.SelectNodes("//div[contains(@class, 'product-item') or contains(@class, 'product-card') or contains(@class, 'product')]");
+            var results = new List<ScrapedProduct>();
+
+            if (nodes != null)
+            {
+                foreach (var node in nodes.Take(15))
+                {
+                    // Try multiple common selectors
+                    var name = node.SelectSingleNode(".//h2//a | .//h3//a | .//a[@class='product-title'] | .//div[@class='product-name']//a")?.InnerText.Trim();
+                    var price = node.SelectSingleNode(".//span[@class='price'] | .//span[@class='money'] | .//div[@class='price']//span")?.InnerText.Trim();
+                    var link = node.SelectSingleNode(".//h2//a | .//h3//a | .//a[@class='product-title']")?.GetAttributeValue("href", "");
+                    var image = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+                    
+                    // Also try data-src for lazy loaded images
+                    if (string.IsNullOrEmpty(image))
+                        image = node.SelectSingleNode(".//img")?.GetAttributeValue("data-src", "");
+
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(price))
+                    {
+                        results.Add(new ScrapedProduct {
+                            Name = System.Net.WebUtility.HtmlDecode(name),
+                            Price = price,
+                            Source = "BBaby by Suleman",
+                            Link = link?.StartsWith("http") == true ? link : $"https://bbabybysuleman.com{link}",
+                            Image = image?.StartsWith("//") == true ? $"https:{image}" : image ?? ""
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+        catch (Exception ex) 
+        { 
+            Console.WriteLine($"BBaby scraping error: {ex.Message}");
+            return new List<ScrapedProduct>(); 
+        }
+    }
+
+    // 3. Search Logic for Diners (Fast HttpClient - General Products)
+    public async Task<List<ScrapedProduct>> SearchDiners(string keyword)
+    {
+        try
+        {
+            string searchUrl = $"https://diners.pk/search?q={Uri.EscapeDataString(keyword)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", GetRandomUserAgent());
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<ScrapedProduct>();
+
+            var html = await response.Content.ReadAsStringAsync();
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var nodes = doc.DocumentNode.SelectNodes("//div[contains(@class, 'product-item') or contains(@class, 'product-card') or contains(@class, 'grid__item')]");
+            var results = new List<ScrapedProduct>();
+
+            if (nodes != null)
+            {
+                foreach (var node in nodes.Take(15))
+                {
+                    var name = node.SelectSingleNode(".//h2//a | .//h3//a | .//a[contains(@class, 'product-title')] | .//div[contains(@class, 'product-title')]//a")?.InnerText.Trim();
+                    var price = node.SelectSingleNode(".//span[contains(@class, 'price')] | .//span[contains(@class, 'money')] | .//div[contains(@class, 'price')]")?.InnerText.Trim();
+                    var link = node.SelectSingleNode(".//h2//a | .//h3//a | .//a[contains(@class, 'product-title')]")?.GetAttributeValue("href", "");
+                    var image = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+                    
+                    if (string.IsNullOrEmpty(image))
+                        image = node.SelectSingleNode(".//img")?.GetAttributeValue("data-src", "");
+
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(price))
+                    {
+                        results.Add(new ScrapedProduct {
+                            Name = System.Net.WebUtility.HtmlDecode(name),
+                            Price = price,
+                            Source = "Diners",
+                            Link = link?.StartsWith("http") == true ? link : $"https://diners.pk{link}",
+                            Image = image?.StartsWith("//") == true ? $"https:{image}" : image ?? ""
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+        catch (Exception ex) 
+        { 
+            Console.WriteLine($"Diners scraping error: {ex.Message}");
+            return new List<ScrapedProduct>(); 
+        }
+    }
+
+    // 4. Search Logic for Daraz (Selenium for JavaScript)
+    public async Task<List<ScrapedProduct>> SearchDaraz(string keyword)
+    {
+        var results = new List<ScrapedProduct>();
+        var options = new ChromeOptions();
+        options.AddArgument("--headless=new");
+        options.AddArgument("--disable-gpu");
+        options.AddArgument("--no-sandbox");
+        options.AddArgument("--silent");
+        options.AddArgument("--log-level=3"); // Hides annoying logs
+        options.AddArgument($"user-agent={GetRandomUserAgent()}");
+
+        var service = ChromeDriverService.CreateDefaultService();
+        service.HideCommandPromptWindow = true; // Keeps terminal clean
+
+        using (var driver = new ChromeDriver(service, options))
+        {
+            try
+            {
+                string url = $"https://www.daraz.pk/catalog/?q={Uri.EscapeDataString(keyword)}";
+                driver.Navigate().GoToUrl(url);
+
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                // Wait for the product items to actually load into the DOM
+                wait.Until(d => d.FindElements(By.CssSelector("div[data-qa-locator='product-item']")).Count > 0);
+
+                var productElements = driver.FindElements(By.CssSelector("div[data-qa-locator='product-item']"));
+
+                foreach (var item in productElements.Take(10))
+                {
+                    try {
+                        var name = item.FindElement(By.CssSelector("div.title--wFj93 > a")).Text;
+                        var price = item.FindElement(By.CssSelector("span.currency--GVKjl")).Text;
+                        var link = item.FindElement(By.CssSelector("div.title--wFj93 > a")).GetAttribute("href");
+                        var image = item.FindElement(By.CssSelector("img.mainPic--ehOdr")).GetAttribute("src");
+
+                        results.Add(new ScrapedProduct {
+                            Name = name,
+                            Price = "Rs. " + price,
+                            Image = image ?? "",
+                            Link = link ?? url,
+                            Source = "Daraz"
+                        });
+                    } catch { continue; }
+                }
+            }
+            catch (Exception ex) { Console.WriteLine($"Daraz Selenium Error: {ex.Message}"); }
+        }
+        return results;
+    }
+
+    // 3. Search Logic for Imtiaz (Fast HttpClient - Grocery Store)
+    public async Task<List<ScrapedProduct>> SearchImtiaz(string keyword)
+    {
+        try
+        {
+            string searchUrl = $"https://www.imtiaz.com.pk/search?q={Uri.EscapeDataString(keyword)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", GetRandomUserAgent());
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<ScrapedProduct>();
+
+            var html = await response.Content.ReadAsStringAsync();
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var nodes = doc.DocumentNode.SelectNodes("//div[contains(@class, 'product-item')]");
+            var results = new List<ScrapedProduct>();
+
+            if (nodes != null)
+            {
+                foreach (var node in nodes.Take(10))
+                {
+                    var name = node.SelectSingleNode(".//h3[@class='product-title']//a")?.InnerText.Trim();
+                    var price = node.SelectSingleNode(".//span[@class='price']")?.InnerText.Trim();
+                    var link = node.SelectSingleNode(".//h3[@class='product-title']//a")?.GetAttributeValue("href", "");
+                    var image = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(price))
+                    {
+                        results.Add(new ScrapedProduct {
+                            Name = System.Net.WebUtility.HtmlDecode(name),
+                            Price = price,
+                            Source = "Imtiaz",
+                            Link = link?.StartsWith("http") == true ? link : $"https://www.imtiaz.com.pk{link}",
+                            Image = image ?? ""
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+        catch { return new List<ScrapedProduct>(); }
+    }
+
+    // 4. Search Logic for Telemart (Fast HttpClient - Electronics)
+    public async Task<List<ScrapedProduct>> SearchTelemart(string keyword)
+    {
+        try
+        {
+            string searchUrl = $"https://telemart.pk/search?query={Uri.EscapeDataString(keyword)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", GetRandomUserAgent());
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<ScrapedProduct>();
+
+            var html = await response.Content.ReadAsStringAsync();
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var nodes = doc.DocumentNode.SelectNodes("//div[@class='product-box']");
+            var results = new List<ScrapedProduct>();
+
+            if (nodes != null)
+            {
+                foreach (var node in nodes.Take(10))
+                {
+                    var name = node.SelectSingleNode(".//h4[@class='name']//a")?.InnerText.Trim();
+                    var price = node.SelectSingleNode(".//span[@class='price-new']")?.InnerText.Trim();
+                    var link = node.SelectSingleNode(".//h4[@class='name']//a")?.GetAttributeValue("href", "");
+                    var image = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(price))
+                    {
+                        results.Add(new ScrapedProduct {
+                            Name = System.Net.WebUtility.HtmlDecode(name),
+                            Price = price,
+                            Source = "Telemart",
+                            Link = link?.StartsWith("http") == true ? link : $"https://telemart.pk{link}",
+                            Image = image ?? ""
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+        catch { return new List<ScrapedProduct>(); }
+    }
+
+    // 5. Search Logic for HomeShopping (Fast HttpClient)
+    public async Task<List<ScrapedProduct>> SearchHomeShopping(string keyword)
+    {
+        try
+        {
+            string searchUrl = $"https://www.homeshopping.pk/categories/search/?product_name={Uri.EscapeDataString(keyword)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, searchUrl);
+            request.Headers.Add("User-Agent", GetRandomUserAgent());
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return new List<ScrapedProduct>();
+
+            var html = await response.Content.ReadAsStringAsync();
+            var doc = new HtmlDocument();
+            doc.LoadHtml(html);
+
+            var nodes = doc.DocumentNode.SelectNodes("//div[@class='product-layout']");
+            var results = new List<ScrapedProduct>();
+
+            if (nodes != null)
+            {
+                foreach (var node in nodes.Take(10))
+                {
+                    var name = node.SelectSingleNode(".//div[@class='name']//a")?.InnerText.Trim();
+                    var price = node.SelectSingleNode(".//span[@class='price-new']")?.InnerText.Trim();
+                    if (string.IsNullOrEmpty(price))
+                        price = node.SelectSingleNode(".//p[@class='price']")?.InnerText.Trim();
+                    
+                    var link = node.SelectSingleNode(".//div[@class='name']//a")?.GetAttributeValue("href", "");
+                    var image = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+
+                    if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(price))
+                    {
+                        results.Add(new ScrapedProduct {
+                            Name = System.Net.WebUtility.HtmlDecode(name),
+                            Price = price,
+                            Source = "HomeShopping",
+                            Link = link ?? "",
+                            Image = image ?? ""
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+        catch { return new List<ScrapedProduct>(); }
+    }
+
+    // 6. Combine Everything - Search All Pakistani Stores
+    public async Task<List<ScrapedProduct>> SearchAllStores(string query)
+    {
+        // Run working scrapers in parallel
+        var naheedTask = SearchNaheed(query);
+        var bbabyTask = SearchBBabyBySuleman(query);
+        var dinersTask = SearchDiners(query);
+        var darazTask = SearchDaraz(query);
+
+        await Task.WhenAll(naheedTask, bbabyTask, dinersTask, darazTask);
+
+        var allResults = new List<ScrapedProduct>();
+        allResults.AddRange(await naheedTask);
+        allResults.AddRange(await bbabyTask);
+        allResults.AddRange(await dinersTask);
+        allResults.AddRange(await darazTask);
+
+        return allResults;
+    }
+
+    private string GetRandomUserAgent() => _userAgents[new Random().Next(_userAgents.Count)];
+}

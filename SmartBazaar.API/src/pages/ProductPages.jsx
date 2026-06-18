@@ -3,7 +3,7 @@ import { ApiService, FloatingParticles } from './SellerComponents';
 import { ImageUpload } from './StorePages';
 
 // Add Product Page Component
-export const AddProductPage = ({ setCurrentPage, user }) => {
+export const AddProductPage = ({ setCurrentPage, user, store }) => {
   const [productName, setProductName] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -15,12 +15,17 @@ export const AddProductPage = ({ setCurrentPage, user }) => {
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    if (!store) {
+      setError('Store information missing. Please re-register or contact support.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     
     try {
       const result = await ApiService.addProduct({
-        StoreID: user.id,
+        StoreID: store.storeID || store.StoreID,
         ProductName: productName,
         Description: productDescription,
         Price: parseFloat(price),
@@ -189,7 +194,7 @@ export const AddProductPage = ({ setCurrentPage, user }) => {
 };
 
 // Edit Product Page Component
-export const EditProductPage = ({ setCurrentPage, user, product }) => {
+export const EditProductPage = ({ setCurrentPage, user, product, store }) => {
   const [productName, setProductName] = useState(product?.name || '');
   const [productDescription, setProductDescription] = useState(product?.description || '');
   const [price, setPrice] = useState(product?.price || '');
@@ -201,13 +206,18 @@ export const EditProductPage = ({ setCurrentPage, user, product }) => {
 
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
+    if (!store) {
+      setError('Store information missing.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     
     try {
       const result = await ApiService.updateProduct({
         ProductID: product.id,
-        StoreID: user.id,
+        StoreID: store.storeID || store.StoreID,
         ProductName: productName,
         Description: productDescription,
         Price: parseFloat(price),
@@ -414,7 +424,7 @@ export const ProductCard = ({ product, onEdit, onDelete }) => {
 };
 
 // Products Management Page Component
-export const ProductsPage = ({ setCurrentPage, user }) => {
+export const ProductsPage = ({ setCurrentPage, user, store }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -422,7 +432,12 @@ export const ProductsPage = ({ setCurrentPage, user }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const result = await ApiService.getProductsByStoreId(user.id);
+        const storeId = store?.storeID || store?.StoreID;
+        if (!storeId) {
+          setLoading(false);
+          return;
+        }
+        const result = await ApiService.getProductsByStoreId(storeId);
         setProducts(result);
         setLoading(false);
       } catch (err) {
@@ -431,10 +446,13 @@ export const ProductsPage = ({ setCurrentPage, user }) => {
       }
     };
     
-    if (user) {
+    if (user && store) {
       fetchProducts();
+    } else if (user && !store) {
+      // If user exists but no store, loading will finish (SellerHub will redirect to store registration)
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, store]);
 
   const handleEdit = (product) => {
     setCurrentPage('editProduct', product);
@@ -444,7 +462,7 @@ export const ProductsPage = ({ setCurrentPage, user }) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         await ApiService.deleteProduct(productId);
-        setProducts(products.filter(p => p.id !== productId));
+        setProducts(products.filter(p => (p.productID || p.ProductID) !== productId));
       } catch (err) {
         alert('Failed to delete product');
       }
@@ -512,7 +530,7 @@ export const ProductsPage = ({ setCurrentPage, user }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map(product => (
                 <ProductCard 
-                  key={product.id} 
+                  key={product.productID || product.ProductID} 
                   product={product} 
                   onEdit={handleEdit}
                   onDelete={handleDelete}

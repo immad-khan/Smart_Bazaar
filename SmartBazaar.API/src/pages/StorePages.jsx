@@ -3,7 +3,7 @@ import { ApiService, FloatingParticles } from './SellerComponents';
 import { uploadBase64ToCloudinary } from '../utils/cloudinary';
 
 // Store Registration Page Component
-export const StoreRegistrationPage = ({ setCurrentPage, user }) => {
+export const StoreRegistrationPage = ({ setCurrentPage, user, setStore }) => {
   const [storeName, setStoreName] = useState('');
   const [storeAddress, setStoreAddress] = useState('');
   const [contactNumber, setContactNumber] = useState('');
@@ -17,20 +17,35 @@ export const StoreRegistrationPage = ({ setCurrentPage, user }) => {
     setError('');
     
     try {
+      console.log('Registering store for user:', user);
       const result = await ApiService.createStore({
-        SellerID: user.id,
+        SellerID: user.id || user.Id || user.sellerID,
         StoreName: storeName,
         Address: storeAddress,
         ContactNumber: contactNumber,
         Description: storeDescription
       });
       
-      if (result.storeId) {
+      console.log('Store registration result:', result);
+      
+      if (result && (result.storeId || result.StoreID)) {
+        const newStore = {
+          StoreID: result.storeId || result.StoreID,
+          StoreName: storeName,
+          Address: storeAddress,
+          ContactNumber: contactNumber,
+          Description: storeDescription
+        };
+        console.log('Setting store state:', newStore);
+        setStore(newStore);
         setCurrentPage('products');
       } else {
-        setError(result.message || 'Store registration failed');
+        const errorMsg = result?.message || result || 'Store registration failed';
+        console.error('Registration failed with:', errorMsg);
+        setError(typeof errorMsg === 'string' ? errorMsg : 'Store registration failed');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError('Store registration failed. Please try again.');
     } finally {
       setLoading(false);

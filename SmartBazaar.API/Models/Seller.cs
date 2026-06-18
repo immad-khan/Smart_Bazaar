@@ -8,22 +8,22 @@ namespace SmartBazaar.API.Models
 
 		[Required]
 		[StringLength(50)]
-		public string FirstName { get; set; }
+		public string FirstName { get; set; } = string.Empty;
 
 		[Required]
 		[StringLength(50)]
-		public string LastName { get; set; }
+		public string LastName { get; set; } = string.Empty;
 
 		[Required]
 		[EmailAddress]
-		public string Email { get; set; }
+		public string Email { get; set; } = string.Empty;
 
 		[Required]
-		public string Password { get; set; }
+		public string Password { get; set; } = string.Empty;
 
 		[Phone]
 		[StringLength(20)]
-		public string PhoneNumber { get; set; }
+		public string? PhoneNumber { get; set; }
 
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 		public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
