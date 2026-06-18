@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:5173")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -74,18 +74,7 @@ builder.Services.AddSingleton(provider =>
     }));
 var app = builder.Build();
 
-// Initialize Qdrant collection on startup
-try
-{
-    var semanticSearch = app.Services.GetRequiredService<SemanticSearchService>();
-    await semanticSearch.InitializeCollectionAsync();
-    Console.WriteLine("✅ Qdrant collection initialized");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"⚠️ Qdrant collection initialization failed: {ex.Message}");
-    Console.WriteLine("ℹ️ API will continue without semantic search");
-}
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
