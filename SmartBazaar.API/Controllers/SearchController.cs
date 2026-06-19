@@ -37,14 +37,25 @@ namespace SmartBazaar.API.Controllers
 			var scrapedTask = _scraperService.SearchAll(q);
 			var databaseTask = SearchDatabaseProducts(q);
 
-			await Task.WhenAll(scrapedTask, databaseTask);
+			List<dynamic> databaseResults = new List<dynamic>();
+			try 
+			{
+				await databaseTask;
+				databaseResults = databaseTask.Result;
+			}
+			catch (Exception dbEx) 
+			{
+				Console.WriteLine($"Database search failed: {dbEx.Message}");
+			}
+
+			await scrapedTask;
 
 			var result = new
 			{
 				query = q,
 				scraped = scrapedTask.Result,
-				database = databaseTask.Result,
-				totalResults = scrapedTask.Result.Count + databaseTask.Result.Count
+				database = databaseResults,
+				totalResults = scrapedTask.Result.Count + databaseResults.Count
 			};
 
 			return Ok(result);
