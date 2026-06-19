@@ -17,8 +17,7 @@ builder.Services.AddScoped<SellerService>();
 builder.Services.AddScoped<StoreService>();
 // Add services to the container.
 builder.Services.AddScoped<ScraperService>();
-builder.Services.AddSingleton<SemanticSearchService>();
-builder.Services.AddSingleton<VectorSearchService>();
+
 
 // Register Authentication Services
 builder.Services.AddScoped<IEmailService, EmailService>();

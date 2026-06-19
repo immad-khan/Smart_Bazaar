@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage';
 import SearchHistoryPage from './pages/SearchHistoryPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import StoreMapPage from './pages/StoreMapPage';
+import AdminPanel from './pages/AdminPanel';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing');
@@ -17,10 +18,11 @@ export default function App() {
     if (userData) {
       const seller = JSON.parse(userData);
       setUser({
-        name: `${seller.FirstName} ${seller.LastName}`,
-        email: seller.Email,
-        phone: seller.PhoneNumber || '',
-        address: seller.Address || '',
+        name: seller.fullName || seller.FullName || seller.name || 'Admin',
+        email: seller.email || seller.Email || '',
+        phone: seller.phoneNumber || seller.PhoneNumber || '',
+        address: seller.address || seller.Address || '',
+        role: seller.role || seller.Role || '',
         avatar: '',
         ...seller
       });
@@ -32,10 +34,11 @@ export default function App() {
       if (userData) {
         const seller = JSON.parse(userData);
         setUser({
-          name: `${seller.FirstName} ${seller.LastName}`,
-          email: seller.Email,
-          phone: seller.PhoneNumber || '',
-          address: seller.Address || '',
+          name: seller.fullName || seller.FullName || seller.name || 'Admin',
+          email: seller.email || seller.Email || '',
+          phone: seller.phoneNumber || seller.PhoneNumber || '',
+          address: seller.address || seller.Address || '',
+          role: seller.role || seller.Role || '',
           avatar: '',
           ...seller
         });
@@ -88,6 +91,8 @@ export default function App() {
         return <AnalyticsPage />;
       case 'store-map':
         return <StoreMapPage />;
+      case 'admin':
+        return <AdminPanel />;
       default:
         return <LandingPage navigateToSeller={navigateToSeller} />;
     }

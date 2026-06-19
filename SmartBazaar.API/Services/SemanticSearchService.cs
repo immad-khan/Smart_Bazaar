@@ -8,42 +8,33 @@ namespace SmartBazaar.API.Services;
 public class SemanticSearchService
 {
     private readonly IConfiguration _configuration;
-    private const string CollectionName = "products";
 
     public SemanticSearchService(IConfiguration configuration)
     {
         _configuration = configuration;
-        Console.WriteLine("⚠️ Qdrant integration disabled. Semantic search will return no results.");
     }
 
     public Task InitializeCollectionAsync()
     {
-        // No-op since Qdrant is not used.
+        // Qdrant integration removed. No-op.
         return Task.CompletedTask;
     }
 
-    public async Task<List<ScoredPoint>> SearchSimilarProductsAsync(float[] queryVector, int limit = 20)
+    public Task<List<object>> SearchSimilarProductsAsync(float[] queryVector, int limit = 20)
     {
-        // Return empty result set.
-        return new List<ScoredPoint>();
+        // Returns empty list since Qdrant is disabled.
+        return Task.FromResult(new List<object>());
     }
 
-    public async Task IndexProductAsync(int productId, float[] embedding, Dictionary<string, object> metadata)
+    public Task IndexProductAsync(int productId, float[] embedding, Dictionary<string, object> metadata)
     {
-        // No-op – indexing is disabled.
-        await Task.CompletedTask;
+        // No-op – indexing disabled.
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteProductAsync(int productId)
+    public Task DeleteProductAsync(int productId)
     {
         // No-op – deletion disabled.
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
-}
-
-public class ScoredPoint
-{
-    public ulong Id { get; set; }
-    public float Score { get; set; }
-    public Dictionary<string, Value> Payload { get; set; } = new();
 }

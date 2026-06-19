@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
@@ -9,14 +9,10 @@ namespace SmartBazaar.API.Services
 	public class ProductService
 	{
 		private readonly DatabaseContext _context;
-		private readonly VectorSearchService _vectorSearch;
-		private readonly SemanticSearchService _semanticSearch;
 
-		public ProductService(DatabaseContext context, VectorSearchService vectorSearch, SemanticSearchService semanticSearch)
+		public ProductService(DatabaseContext context)
 		{
 			_context = context;
-			_vectorSearch = vectorSearch;
-			_semanticSearch = semanticSearch;
 		}
 
 		public async Task<List<Models.Product>> GetByStoreIdAsync(int storeId)
@@ -47,28 +43,6 @@ namespace SmartBazaar.API.Services
 				UpdatedAt = DateTime.UtcNow
 			});
 
-			// Index in vector database for semantic search
-			try
-			{
-				var textToEmbed = $"{product.ProductName} {product.Description} {product.Category}";
-				var embedding = _vectorSearch.GetTextEmbedding(textToEmbed);
-				var metadata = new Dictionary<string, object>
-				{
-					["name"] = product.ProductName ?? "",
-					["description"] = product.Description ?? "",
-					["price"] = product.Price,
-					["category"] = product.Category ?? "",
-					["image"] = product.ImageUrl ?? "",
-					["storeId"] = product.StoreID,
-					["stockQuantity"] = product.StockQuantity
-				};
-				await _semanticSearch.IndexProductAsync(productId, embedding, metadata);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"⚠️ Failed to index product {productId}: {ex.Message}");
-			}
-
 			return productId;
 		}
 
@@ -98,31 +72,6 @@ namespace SmartBazaar.API.Services
 				product.ProductID
 			});
 
-			if (affected > 0)
-			{
-				// Re-index in vector database
-				try
-				{
-					var textToEmbed = $"{product.ProductName} {product.Description} {product.Category}";
-					var embedding = _vectorSearch.GetTextEmbedding(textToEmbed);
-					var metadata = new Dictionary<string, object>
-					{
-						["name"] = product.ProductName ?? "",
-						["description"] = product.Description ?? "",
-						["price"] = product.Price,
-						["category"] = product.Category ?? "",
-						["image"] = product.ImageUrl ?? "",
-						["storeId"] = product.StoreID,
-						["stockQuantity"] = product.StockQuantity
-					};
-					await _semanticSearch.IndexProductAsync(product.ProductID, embedding, metadata);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"⚠️ Failed to re-index product {product.ProductID}: {ex.Message}");
-				}
-			}
-
 			return affected > 0;
 		}
 
@@ -131,20 +80,6 @@ namespace SmartBazaar.API.Services
 			using var connection = _context.CreateConnection();
 			var sql = "DELETE FROM products WHERE productid = @ProductID";
 			var affected = await connection.ExecuteAsync(sql, new { ProductID = productId });
-			
-			if (affected > 0)
-			{
-				// Remove from vector database
-				try
-				{
-					await _semanticSearch.DeleteProductAsync(productId);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"⚠️ Failed to delete product {productId} from vector index: {ex.Message}");
-				}
-			}
-			
 			return affected > 0;
 		}
 

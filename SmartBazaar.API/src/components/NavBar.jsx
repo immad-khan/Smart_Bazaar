@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaUser, FaHistory, FaChartBar, FaMapMarkedAlt, FaHome, FaStore, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaHistory, FaChartBar, FaMapMarkedAlt, FaHome, FaStore, FaSignOutAlt, FaShieldAlt } from 'react-icons/fa';
 
 export default function NavBar({ currentView, setCurrentView, user }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,7 +16,11 @@ export default function NavBar({ currentView, setCurrentView, user }) {
     { id: "history", label: "History", icon: <FaHistory /> },
     { id: "analytics", label: "Analytics", icon: <FaChartBar /> },
     { id: "store-map", label: "Stores", icon: <FaMapMarkedAlt /> },
-  ]
+  ];
+
+  if (user && (user.role === 'Admin' || user.Role === 'Admin')) {
+    navItems.push({ id: "admin", label: "Admin", icon: <FaShieldAlt /> });
+  }
 
   return (
     <>
