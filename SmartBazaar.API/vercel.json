@@ -5,7 +5,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://smartbazaar-api-amb2h4czg4a9ggcw.centralindia-01.azurewebsites.net/"
+            "destination": "https://smartbazaar-api-amb2h4czg4a9ggcw.centralindia-01.azurewebsites.net/api/$1"
         },
         {
             "source": "/(.*)",
