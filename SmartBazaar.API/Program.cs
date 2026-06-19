@@ -91,4 +91,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapGet("/", () => "SmartBazaar API is running successfully on Azure!");
+
 app.Run();
