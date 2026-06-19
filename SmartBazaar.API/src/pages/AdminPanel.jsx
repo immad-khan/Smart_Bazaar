@@ -21,7 +21,7 @@ export default function AdminPanel() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('http://localhost:5009/api/admin/pending-approvals', {
+      const response = await fetch('/api/admin/pending-approvals', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -46,7 +46,7 @@ export default function AdminPanel() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:5009/api/admin/approve/${requestId}`, {
+      const response = await fetch(`/api/admin/approve/${requestId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export default function AdminPanel() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:5009/api/admin/reject/${requestId}`, {
+      const response = await fetch(`/api/admin/reject/${requestId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // API Service for backend communication
 const ApiService = {
-  API_BASE_URL: 'http://localhost:5009',
+  API_BASE_URL: '',
   
   async registerSeller(sellerData) {
     const response = await fetch(`${this.API_BASE_URL}/api/sellers/register`, {

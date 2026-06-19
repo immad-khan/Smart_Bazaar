@@ -32,7 +32,7 @@ export default function NewAuthFlow({ onAuthSuccess }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5009/api/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ export default function NewAuthFlow({ onAuthSuccess }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5009/api/auth/verify-email', {
+      const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +94,7 @@ export default function NewAuthFlow({ onAuthSuccess }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5009/api/auth/resend-code', {
+      const response = await fetch('/api/auth/resend-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })
@@ -120,7 +120,7 @@ export default function NewAuthFlow({ onAuthSuccess }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5009/api/auth/request-approval', {
+      const response = await fetch('/api/auth/request-approval', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -153,7 +153,7 @@ export default function NewAuthFlow({ onAuthSuccess }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5009/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
